@@ -3,6 +3,7 @@ import requests
 import concurrent.futures
 import re
 import json
+import time
 from bs4 import BeautifulSoup
 from rich.console import Console
 
@@ -86,37 +87,73 @@ def check_url(subdomain):
     except requests.exceptions.RequestException:
         return {"url": subdomain, "status": "error", "score": 0, "cloaking": False}
 
+def print_banner():
+    banner = r"""
+[bold #0B2F4C]  ____             [/][bold #1BA6B2] ____       _     _               [/]
+[bold #0B2F4C] / ___| _____   __/[/][bold #1BA6B2] ___| _ __ (_) __| | ___ _ __ ___ [/]
+[bold #0B2F4C]| |  _ / _ \ \ / /[/][bold #1BA6B2]\___ \| '_ \| |/ _` |/ _ \ '__/ __|[/]
+[bold #0B2F4C]| |_| | (_) \ V / [/][bold #1BA6B2] ___) | |_) | | (_| |  __/ |  \__ \[/]
+[bold #0B2F4C] \____|\___/ \_/  [/][bold #1BA6B2]|____/| .__/|_|\__,_|\___|_|  |___/[/]
+[bold #0B2F4C]                  [/][bold #1BA6B2]      |_|                          [/]
+"""
+    console.print(banner)
+
 def get_subdomains(domain):
     """Fetch a list of subdomains from crt.sh based on the target domain."""
-    try:
-        url = f"https://crt.sh/?q=%.{domain}&output=json"
-        response = requests.get(url, timeout=15)
-        response.raise_for_status()
-        
-        data = response.json()
-        subdomains = set()
-        
-        if isinstance(data, list):
-            for item in data:
-                name_value = item.get("name_value", "")
-                # Split if there are newlines
-                for name in name_value.split("\n"):
-                    clean_name = name.strip()
-                    # Remove wildcard *.
-                    if clean_name.startswith("*."):
-                        clean_name = clean_name[2:]
-                    if clean_name:
-                        subdomains.add(clean_name)
-                        
-        return list(subdomains)
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red][!] Gagal terhubung ke crt.sh: {e}[/bold red]")
-        return []
-    except Exception as e:
-        console.print(f"[bold red][!] Terjadi kesalahan saat parsing data: {e}[/bold red]")
-        return []
+    url = f"https://crt.sh/?q=%.{domain}&output=json"
+    max_retries = 3
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = requests.get(url, timeout=15)
+            response.raise_for_status()
+            
+            data = response.json()
+            subdomains = set()
+            
+            if isinstance(data, list):
+                for item in data:
+                    name_value = item.get("name_value", "")
+                    # Split if there are newlines
+                    for name in name_value.split("\n"):
+                        clean_name = name.strip()
+                        # Remove wildcard *.
+                        if clean_name.startswith("*."):
+                            clean_name = clean_name[2:]
+                        if clean_name:
+                            subdomains.add(clean_name)
+                            
+            return list(subdomains)
+            
+        except requests.exceptions.HTTPError as e:
+            if response.status_code in [500, 502, 503, 504]:
+                if attempt < max_retries:
+                    console.print(f"[bold yellow][!] crt.sh error {response.status_code}. Mencoba ulang ({attempt}/{max_retries})...[/bold yellow]")
+                    time.sleep(2)
+                    continue
+                else:
+                    console.print("[bold yellow]Server crt.sh down, beralih ke mode fallback...[/bold yellow]")
+                    return []
+            console.print(f"[bold red][!] Gagal terhubung ke crt.sh: {e}[/bold red]")
+            return []
+            
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries:
+                console.print(f"[bold yellow][!] Koneksi bermasalah. Mencoba ulang ({attempt}/{max_retries})...[/bold yellow]")
+                time.sleep(2)
+                continue
+            console.print("[bold yellow]Server crt.sh down, beralih ke mode fallback...[/bold yellow]")
+            return []
+            
+        except Exception as e:
+            console.print(f"[bold red][!] Terjadi kesalahan saat parsing data: {e}[/bold red]")
+            return []
+            
+    return []
 
 def main():
+    print_banner()
+    
     parser = argparse.ArgumentParser(
         description="GovSpiders - Pemindai SEO poisoning/Defacement pada infrastruktur domain pemerintah dan pendidikan."
     )
