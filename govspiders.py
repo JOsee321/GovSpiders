@@ -116,28 +116,32 @@ def get_subdomains(domain):
         console.print(f"[bold red][!] Terjadi kesalahan saat parsing data: {e}[/bold red]")
         return []
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="GovSpiders - Pemindai SEO poisoning/Defacement pada infrastruktur domain pemerintah dan pendidikan."
-    )
-    parser.add_argument(
-        "-d", "--domain", 
-        required=True, 
-        help="Target root domain untuk dipindai (contoh: target.go.id)"
-    )
-    parser.add_argument(
-        "-o", "--output", 
-        required=False, 
-        help="Nama file output untuk pelaporan (opsional)"
-    )
+def print_banner():
+    banner = r"""
+ [#0B2F4C]  ____             [/#0B2F4C][#1BA6B2] ____       _     _               [/#1BA6B2]
+ [#0B2F4C] / ___| _____   __/[/#0B2F4C][#1BA6B2] ___| _ __ (_) __| | ___ _ __ ___ [/#1BA6B2]
+ [#0B2F4C]| |  _ / _ \ \ / /[/#0B2F4C][#1BA6B2]\___ \| '_ \| |/ _` |/ _ \ '__/ __|[/#1BA6B2]
+ [#0B2F4C]| |_| | (_) \ V / [/#0B2F4C][#1BA6B2] ___) | |_) | | (_| |  __/ |  \__ \[/#1BA6B2]
+ [#0B2F4C] \____|\___/ \_/  [/#0B2F4C][#1BA6B2]|____/| .__/|_|\__,_|\___|_|  |___/[/#1BA6B2]
+ [#0B2F4C]                  [/#0B2F4C][#1BA6B2]      |_|                          [/#1BA6B2]
+"""
+    console.print(banner)
 
-    args = parser.parse_args()
+def main():
+    print_banner()
+    
+    target_domain = console.input("[bold cyan]Masukkan target domain (contoh: target-instansi.go.id): [/bold cyan]").strip()
+    output_file = console.input("[bold cyan]Masukkan nama file output (contoh: audit_results.txt): [/bold cyan]").strip()
+    
+    if not target_domain:
+        console.print("[bold red][!] Target domain tidak boleh kosong.[/bold red]")
+        return
 
     # Display initialization message using rich
-    console.print(f"[bold cyan][*] Inisialisasi GovSpiders... Memulai pemindaian untuk target: {args.domain}[/bold cyan]")
+    console.print(f"[bold cyan][*] Inisialisasi GovSpiders... Memulai pemindaian untuk target: {target_domain}[/bold cyan]")
 
     with console.status("[bold yellow]Mencari subdomain di crt.sh...[/bold yellow]"):
-        subdomains = get_subdomains(args.domain)
+        subdomains = get_subdomains(target_domain)
         
     if subdomains:
         console.print(f"[bold green][*] Berhasil menemukan {len(subdomains)} subdomain unik.[/bold green]")
@@ -164,8 +168,8 @@ def main():
                     console.print(f"[yellow][ERROR] {result['url']}[/yellow]")
                     
         # Export process
-        if args.output:
-            txt_filename = args.output
+        if output_file:
+            txt_filename = output_file
         else:
             txt_filename = "govspiders_report.txt"
             

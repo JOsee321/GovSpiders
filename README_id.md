@@ -31,12 +31,12 @@ Pastikan Python versi terbaru (minimal versi 3.9) sudah terpasang.
 
 ## Cara Penggunaan
 
-Gunakan argumen `-d` untuk domain dan `-o` untuk nama file output laporannya.
-
 Contoh command CLI:
 ```bash
-python govspiders.py -d target-instansi.go.id -o hasil_audit.txt
+python govspiders.py
 ```
+
+Setelah skrip dijalankan, Anda akan diminta untuk memasukkan target domain dan nama file output secara langsung dan interaktif di dalam terminal.
 
 Skrip akan langsung bekerja mencari semua subdomain yang berasosiasi, lalu memindainya satu per satu secara paralel. Laporan output akan tersedia di file teks dan sebuah file JSON berisi detail lengkap skor dan hasil deteksi cloaking.
 
