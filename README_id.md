@@ -1,7 +1,5 @@
 <p align="center">
-  <a href="https://github.com/JOsee321/GovSpiders">
-    <img src="logo.png" alt="GovSpiders Logo" width="200">
-  </a>
+  <img src="https://github.com/user-attachments/assets/5bd6d4b9-0835-44cb-be71-ffad6af64a00" alt="GovSpiders Logo" width="200">
 </p>
 <h1 align="center">GovSpiders</h1>
 <p align="center">CLI tool untuk mendeteksi sisipan judol (SEO Poisoning) pada domain pemerintah dan kampus.</p>
