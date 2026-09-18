@@ -31,12 +31,12 @@ Ensure you have the latest version of Python installed (minimum version 3.9).
 
 ## Usage
 
+Use the `-d` argument for the domain and `-o` for the output report filename.
+
 CLI command example:
 ```bash
-python govspiders.py
+python govspiders.py -d target-instansi.go.id -o audit_results.txt
 ```
-
-After running the script, you will be prompted interactively to enter the target domain and output filename directly in the terminal.
 
 The script will immediately find all associated subdomains and scan them one by one in parallel. Output reports will be available in a text file and a JSON file containing complete details of scores and cloaking detection results.
 
