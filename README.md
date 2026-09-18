@@ -2,43 +2,44 @@
 <img src="logo.png" alt="GovSpiders Logo" width="200">
 </p>
 <h1 align="center">GovSpiders</h1>
-<p align="center">CLI tool untuk mendeteksi sisipan judol (SEO Poisoning) pada domain pemerintah dan kampus.</p>
+<p align="center">CLI tool to detect SEO Poisoning on government and educational domains.</p>
+<p align="center"><i>Read this documentation in <a href="README_id.md">Indonesian</a></i></p><br>
 
 ---
 
-## Fitur Utama
+## Key Features
 
-- **Subdomain Enumeration (crt.sh):** Secara otomatis mengumpulkan seluruh daftar subdomain target melalui rekaman sertifikat publik.
-- **Concurrent Scanning (50 Threads):** Pemindaian berjalan paralel secara asinkron menggunakan 50 thread sekaligus, sehingga proses sangat cepat.
-- **Regex Weighted Scoring Engine:** Mendeteksi elemen khusus di dalam DOM seperti title, meta tags, dan body. Kata kunci diberi bobot skor. Jika total skor melampaui batas ambang, URL ditandai terinfeksi.
-- **Double-agent Cloaking Detection:** Mencegah trik cloaking yang sering dipakai peretas untuk mengelabui mesin pencari. Skrip ini akan menyamar sebagai Googlebot pada request pertama, lalu memverifikasi ulang dengan user-agent browser biasa jika ditemukan kecurigaan.
+- **Subdomain Enumeration (crt.sh):** Automatically gathers a complete list of target subdomains via public certificate records.
+- **Concurrent Scanning (50 Threads):** Scans run in parallel asynchronously using 50 threads at once, ensuring very fast processing.
+- **Regex Weighted Scoring Engine:** Detects specific elements within the DOM such as title, meta tags, and body. Keywords are assigned weighted scores. If the total score exceeds the threshold, the URL is marked as infected.
+- **Double-agent Cloaking Detection:** Prevents cloaking tricks often used by attackers to deceive search engines. The script poses as Googlebot on the first request, then re-verifies using a standard browser user-agent if suspicion arises.
 
-## Cara Instalasi
+## Installation
 
-Pastikan Python versi terbaru (minimal versi 3.9) sudah terpasang.
+Ensure you have the latest version of Python installed (minimum version 3.9).
 
-1. Clone repositori ini:
+1. Clone this repository:
    ```bash
    git clone https://github.com/JOsee321/GovSpiders.git
    cd GovSpiders
    ```
 
-2. Instal dependensi:
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-## Cara Penggunaan
+## Usage
 
-Gunakan argumen `-d` untuk domain dan `-o` untuk nama file output laporannya.
+Use the `-d` argument for the domain and `-o` for the output report filename.
 
-Contoh command CLI:
+CLI command example:
 ```bash
-python govspiders.py -d banjarbarukota.go.id -o hasil_audit.txt
+python govspiders.py -d banjarbarukota.go.id -o audit_results.txt
 ```
 
-Skrip akan langsung bekerja mencari semua subdomain yang berasosiasi, lalu memindainya satu per satu secara paralel. Laporan output akan tersedia di file teks dan sebuah file JSON berisi detail lengkap skor dan hasil deteksi cloaking.
+The script will immediately find all associated subdomains and scan them one by one in parallel. Output reports will be available in a text file and a JSON file containing complete details of scores and cloaking detection results.
 
 ## Disclaimer
 
-Tool ini dirancang murni untuk tujuan audit keamanan dan kepatuhan internal. Gunakan hanya pada aset yang Anda kelola sendiri, atau yang sudah diizinkan (misal oleh CSIRT/institusi terkait). Segala bentuk penyalahgunaan adalah tanggung jawab pengguna sepenuhnya.
+This tool is designed purely for internal security audits and compliance purposes. Only use it on assets you manage yourself or have explicit authorization to test (e.g., by CSIRT or related institutions). Any form of misuse is solely the responsibility of the user.
