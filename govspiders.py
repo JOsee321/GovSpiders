@@ -87,7 +87,7 @@ def check_url(subdomain):
         return {"url": subdomain, "status": "error", "score": 0, "cloaking": False}
 
 def get_subdomains(domain):
-    """Mengambil daftar subdomain dari crt.sh berdasarkan domain target."""
+    """Fetch a list of subdomains from crt.sh based on the target domain."""
     try:
         url = f"https://crt.sh/?q=%.{domain}&output=json"
         response = requests.get(url, timeout=15)
@@ -99,10 +99,10 @@ def get_subdomains(domain):
         if isinstance(data, list):
             for item in data:
                 name_value = item.get("name_value", "")
-                # Pisahkan jika ada newline
+                # Split if there are newlines
                 for name in name_value.split("\n"):
                     clean_name = name.strip()
-                    # Hapus wildcard *.
+                    # Remove wildcard *.
                     if clean_name.startswith("*."):
                         clean_name = clean_name[2:]
                     if clean_name:
@@ -133,7 +133,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Tampilkan pesan inisialisasi menggunakan rich
+    # Display initialization message using rich
     console.print(f"[bold cyan][*] Inisialisasi GovSpiders... Memulai pemindaian untuk target: {args.domain}[/bold cyan]")
 
     with console.status("[bold yellow]Mencari subdomain di crt.sh...[/bold yellow]"):
@@ -163,13 +163,13 @@ def main():
                 elif result["status"] == "error":
                     console.print(f"[yellow][ERROR] {result['url']}[/yellow]")
                     
-        # Proses Export
+        # Export process
         if args.output:
             txt_filename = args.output
         else:
             txt_filename = "govspiders_report.txt"
             
-        # Pisahkan ekstensi dan ganti jadi json
+        # Separate extension and replace with json
         if "." in txt_filename:
             json_filename = txt_filename.rsplit(".", 1)[0] + ".json"
         else:

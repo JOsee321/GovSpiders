@@ -35,7 +35,7 @@ Use the `-d` argument for the domain and `-o` for the output report filename.
 
 CLI command example:
 ```bash
-python govspiders.py -d banjarbarukota.go.id -o audit_results.txt
+python govspiders.py -d target-instansi.go.id -o audit_results.txt
 ```
 
 The script will immediately find all associated subdomains and scan them one by one in parallel. Output reports will be available in a text file and a JSON file containing complete details of scores and cloaking detection results.

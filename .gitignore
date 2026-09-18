@@ -3,12 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Lingkungan Virtual
+# Virtual Environment
 venv/
 env/
 .venv/
 
-# File hasil pemindaian dan perancangan
-PRD.md
+# Scan results and documentation
 *.txt
 *.json
