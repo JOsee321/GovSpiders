@@ -1,8 +1,40 @@
 import argparse
 import requests
+import concurrent.futures
+import re
 from rich.console import Console
 
 console = Console()
+
+SIGNATURES = {
+    "slot": 20, 
+    "gacor": 50, 
+    "rtp live": 100, 
+    "deposit pulsa": 100, 
+    "maxwin": 100, 
+    "zeus": 20
+}
+
+def check_url(subdomain):
+    url = f"http://{subdomain}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        html_content = response.text
+        
+        total_skor = 0
+        for keyword, weight in SIGNATURES.items():
+            if re.search(re.escape(keyword), html_content, re.IGNORECASE):
+                total_skor += weight
+                
+        status = "terinfeksi" if total_skor >= 100 else "aman"
+        return {"url": subdomain, "status": status, "score": total_skor}
+        
+    except requests.exceptions.RequestException:
+        return {"url": subdomain, "status": "error", "score": 0}
 
 def get_subdomains(domain):
     """Mengambil daftar subdomain dari crt.sh berdasarkan domain target."""
@@ -59,6 +91,20 @@ def main():
         
     if subdomains:
         console.print(f"[bold green][*] Berhasil menemukan {len(subdomains)} subdomain unik.[/bold green]")
+        
+        console.print("[bold cyan][*] Memulai pemindaian multithreading...[/bold cyan]")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_url = {executor.submit(check_url, sub): sub for sub in subdomains}
+            
+            for future in concurrent.futures.as_completed(future_to_url):
+                result = future.result()
+                
+                if result["status"] == "terinfeksi":
+                    console.print(f"[bold red][TERINFEKSI] {result['url']} (Skor: {result['score']})[/bold red]")
+                elif result["status"] == "aman":
+                    console.print(f"[green][AMAN] {result['url']}[/green]")
+                elif result["status"] == "error":
+                    console.print(f"[yellow][ERROR] {result['url']}[/yellow]")
     else:
         console.print("[bold red][!] Tidak ada subdomain yang ditemukan atau terjadi kesalahan.[/bold red]")
 
