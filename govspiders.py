@@ -6,6 +6,7 @@ import json
 import time
 import random
 import urllib3
+from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from rich.console import Console
 
@@ -31,8 +32,46 @@ SIGNATURES = {
     "pragmatic play": 100
 }
 
-def check_url(subdomain, proxy_url=None):
-    url = f"http://{subdomain}"
+def crawl_urls(base_url, max_depth, proxy_url=None):
+    visited_urls = set()
+    urls_to_visit = [(base_url, 0)]
+    internal_urls = set([base_url])
+    
+    base_domain = urlparse(base_url).netloc
+    proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
+    
+    while urls_to_visit:
+        current_url, current_depth = urls_to_visit.pop(0)
+        
+        if current_url in visited_urls or current_depth > max_depth:
+            continue
+            
+        visited_urls.add(current_url)
+        
+        try:
+            selected_ua = random.choice(USER_AGENTS)
+            headers = {"User-Agent": selected_ua}
+            response = requests.get(current_url, headers=headers, proxies=proxies, timeout=10, verify=False)
+            
+            if "text/html" in response.headers.get("Content-Type", ""):
+                soup = BeautifulSoup(response.text, 'html.parser')
+                for a_tag in soup.find_all('a', href=True):
+                    href = a_tag['href']
+                    absolute_url = urljoin(current_url, href)
+                    parsed_url = urlparse(absolute_url)
+                    
+                    if parsed_url.netloc == base_domain and absolute_url not in visited_urls:
+                        internal_urls.add(absolute_url)
+                        if current_depth + 1 <= max_depth:
+                            urls_to_visit.append((absolute_url, current_depth + 1))
+        except Exception:
+            pass
+            
+    return internal_urls
+
+def check_url(url, proxy_url=None):
+    if not url.startswith("http"):
+        url = f"http://{url}"
     
     proxies = None
     if proxy_url:
@@ -98,10 +137,10 @@ def check_url(subdomain, proxy_url=None):
             except requests.exceptions.RequestException:
                 pass
                 
-        return {"url": subdomain, "status": status, "score": total_skor, "cloaking": cloaking, "title": title_text}
+        return {"url": url, "status": status, "score": total_skor, "cloaking": cloaking, "title": title_text}
         
     except requests.exceptions.RequestException:
-        return {"url": subdomain, "status": "error", "score": 0, "cloaking": False, "title": ""}
+        return {"url": url, "status": "error", "score": 0, "cloaking": False, "title": ""}
 
 def print_banner():
     banner = r"""
@@ -205,6 +244,12 @@ def main():
         help="Rute trafik melalui proxy HTTP/HTTPS (contoh: http://127.0.0.1:8080)"
     )
     parser.add_argument(
+        "--depth", 
+        type=int,
+        default=2,
+        help="Kedalaman maksimal crawling (default: 2)"
+    )
+    parser.add_argument(
         "-o", "--output", 
         required=False, 
         help="Nama file output untuk pelaporan (opsional)"
@@ -221,13 +266,21 @@ def main():
     if subdomains:
         console.print(f"[bold green][*] Berhasil menemukan {len(subdomains)} subdomain unik.[/bold green]")
         
-        console.print("[bold cyan][*] Memulai pemindaian multithreading...[/bold cyan]")
+        all_urls_to_scan = set()
+        with console.status(f"[bold yellow]Melakukan deep crawling (depth: {args.depth}) pada subdomain...[/bold yellow]"):
+            with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+                future_to_crawl = {executor.submit(crawl_urls, f"http://{sub}", args.depth, args.proxy): sub for sub in subdomains}
+                
+                for future in concurrent.futures.as_completed(future_to_crawl):
+                    all_urls_to_scan.update(future.result())
+                    
+        console.print(f"[bold cyan][*] Memulai pemindaian multithreading pada {len(all_urls_to_scan)} URL...[/bold cyan]")
         
         infected_results = []
         json_results = []
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-            future_to_url = {executor.submit(check_url, sub, args.proxy): sub for sub in subdomains}
+            future_to_url = {executor.submit(check_url, url, args.proxy): url for url in all_urls_to_scan}
             
             for future in concurrent.futures.as_completed(future_to_url):
                 result = future.result()

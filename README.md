@@ -31,14 +31,14 @@ Ensure you have the latest version of Python installed (minimum version 3.9).
 
 ## Usage
 
-Use the `-d` argument for the domain, `-o` for the output report filename, and `--proxy` (or `-p`) to route traffic through an HTTP/HTTPS proxy (e.g., `http://127.0.0.1:8080`).
+Use the `-d` argument for the domain, `-o` for the output report filename, `--proxy` (or `-p`) to route traffic through an HTTP/HTTPS proxy (e.g., `http://127.0.0.1:8080`), and `--depth` to set the maximum crawling depth (default: 2).
 
 CLI command example:
 ```bash
-python govspiders.py -d target-instansi.go.id -o audit_results.txt --proxy http://127.0.0.1:8080
+python govspiders.py -d target-instansi.go.id -o audit_results.txt --proxy http://127.0.0.1:8080 --depth 3
 ```
 
-The script will immediately find all associated subdomains and scan them one by one in parallel. The tool automatically generates two types of output: a human-readable `.txt` file and a pipeline-ready `.json` file for integration into external tools like Nuclei or Burp Suite.
+The script will immediately find all associated subdomains, crawl them using BeautifulSoup to find all internal sub-directory links up to the specified depth, and scan all gathered URLs one by one in parallel. The tool automatically generates two types of output: a human-readable `.txt` file and a pipeline-ready `.json` file for integration into external tools like Nuclei or Burp Suite.
 
 ## Disclaimer
 
