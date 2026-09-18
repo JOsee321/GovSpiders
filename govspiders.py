@@ -2,6 +2,7 @@ import argparse
 import requests
 import concurrent.futures
 import re
+import json
 from rich.console import Console
 
 console = Console()
@@ -93,6 +94,9 @@ def main():
         console.print(f"[bold green][*] Berhasil menemukan {len(subdomains)} subdomain unik.[/bold green]")
         
         console.print("[bold cyan][*] Memulai pemindaian multithreading...[/bold cyan]")
+        
+        infected_results = []
+        
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             future_to_url = {executor.submit(check_url, sub): sub for sub in subdomains}
             
@@ -101,10 +105,33 @@ def main():
                 
                 if result["status"] == "terinfeksi":
                     console.print(f"[bold red][TERINFEKSI] {result['url']} (Skor: {result['score']})[/bold red]")
+                    infected_results.append(result)
                 elif result["status"] == "aman":
                     console.print(f"[green][AMAN] {result['url']}[/green]")
                 elif result["status"] == "error":
                     console.print(f"[yellow][ERROR] {result['url']}[/yellow]")
+                    
+        # Proses Export
+        if args.output:
+            txt_filename = args.output
+        else:
+            txt_filename = "govspiders_report.txt"
+            
+        # Pisahkan ekstensi dan ganti jadi json
+        if "." in txt_filename:
+            json_filename = txt_filename.rsplit(".", 1)[0] + ".json"
+        else:
+            json_filename = txt_filename + ".json"
+            
+        with open(txt_filename, "w") as f_txt:
+            for item in infected_results:
+                f_txt.write(f"{item['url']}\n")
+                
+        with open(json_filename, "w") as f_json:
+            json.dump(infected_results, f_json, indent=4)
+            
+        console.print(f"\n[bold cyan][*] Pemindaian selesai! Laporan TXT disimpan di {txt_filename} dan log forensik di {json_filename}[/bold cyan]")
+        
     else:
         console.print("[bold red][!] Tidak ada subdomain yang ditemukan atau terjadi kesalahan.[/bold red]")
 
