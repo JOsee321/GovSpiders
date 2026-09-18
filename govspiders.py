@@ -47,9 +47,11 @@ def check_url(subdomain, proxy_url=None):
         
         total_skor = 0
         
+        title_text = ""
         target_texts = []
         if soup.title and soup.title.string:
-            target_texts.append(soup.title.string.lower())
+            title_text = soup.title.string.strip()
+            target_texts.append(title_text.lower())
             
         meta_desc = soup.find('meta', attrs={'name': re.compile(r'^description$', re.I)})
         if meta_desc and meta_desc.get('content'):
@@ -96,10 +98,10 @@ def check_url(subdomain, proxy_url=None):
             except requests.exceptions.RequestException:
                 pass
                 
-        return {"url": subdomain, "status": status, "score": total_skor, "cloaking": cloaking}
+        return {"url": subdomain, "status": status, "score": total_skor, "cloaking": cloaking, "title": title_text}
         
     except requests.exceptions.RequestException:
-        return {"url": subdomain, "status": "error", "score": 0, "cloaking": False}
+        return {"url": subdomain, "status": "error", "score": 0, "cloaking": False, "title": ""}
 
 def print_banner():
     banner = r"""
@@ -222,12 +224,22 @@ def main():
         console.print("[bold cyan][*] Memulai pemindaian multithreading...[/bold cyan]")
         
         infected_results = []
+        json_results = []
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
             future_to_url = {executor.submit(check_url, sub, args.proxy): sub for sub in subdomains}
             
             for future in concurrent.futures.as_completed(future_to_url):
                 result = future.result()
+                
+                status_mapped = "Vulnerable" if result["status"] == "terinfeksi" else "Safe" if result["status"] == "aman" else "Error"
+                json_results.append({
+                    "url": result["url"],
+                    "score": result["score"],
+                    "status": status_mapped,
+                    "cloaking_detected": result["cloaking"],
+                    "title": result.get("title", "")
+                })
                 
                 if result["status"] == "terinfeksi":
                     if result.get("cloaking"):
@@ -257,7 +269,7 @@ def main():
                 f_txt.write(f"{item['url']}\n")
                 
         with open(json_filename, "w") as f_json:
-            json.dump(infected_results, f_json, indent=4)
+            json.dump(json_results, f_json, indent=4)
             
         console.print(f"\n[bold cyan][*] Pemindaian selesai! Laporan TXT disimpan di {txt_filename} dan log forensik di {json_filename}[/bold cyan]")
         

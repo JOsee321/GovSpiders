@@ -31,14 +31,14 @@ Pastikan Python versi terbaru (minimal versi 3.9) sudah terpasang.
 
 ## Cara Penggunaan
 
-Gunakan argumen `-d` untuk domain dan `-o` untuk nama file output laporannya.
+Gunakan argumen `-d` untuk domain, `-o` untuk nama file output laporannya, dan `--proxy` (atau `-p`) untuk merutekan trafik melalui proxy HTTP/HTTPS (contoh: `http://127.0.0.1:8080`).
 
 Contoh command CLI:
 ```bash
-python govspiders.py -d target-instansi.go.id -o hasil_audit.txt
+python govspiders.py -d target-instansi.go.id -o hasil_audit.txt --proxy http://127.0.0.1:8080
 ```
 
-Skrip akan langsung bekerja mencari semua subdomain yang berasosiasi, lalu memindainya satu per satu secara paralel. Laporan output akan tersedia di file teks dan sebuah file JSON berisi detail lengkap skor dan hasil deteksi cloaking.
+Skrip akan langsung bekerja mencari semua subdomain yang berasosiasi, lalu memindainya satu per satu secara paralel. Tool ini secara otomatis menghasilkan dua jenis output: file `.txt` untuk pembacaan manusia dan file `.json` (pipeline-ready) untuk integrasi ke tools eksternal seperti Nuclei atau Burp Suite.
 
 ## Disclaimer
 
