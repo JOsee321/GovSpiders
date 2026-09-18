@@ -98,6 +98,27 @@ def print_banner():
 """
     console.print(banner)
 
+def alienvault_fallback(domain):
+    """Fallback reconnaissance using AlienVault OTX API."""
+    try:
+        url = f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/passive_dns"
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        
+        data = response.json()
+        subdomains = set()
+        
+        if "passive_dns" in data:
+            for entry in data["passive_dns"]:
+                hostname = entry.get("hostname", "")
+                if hostname.endswith(domain):
+                    subdomains.add(hostname)
+                    
+        return list(subdomains)
+    except Exception as e:
+        console.print(f"[bold red][!] Semua metode enumerasi telah gagal. AlienVault error: {e}[/bold red]")
+        return []
+
 def get_subdomains(domain):
     """Fetch a list of subdomains from crt.sh based on the target domain."""
     url = f"https://crt.sh/?q=%.{domain}&output=json"
@@ -132,18 +153,18 @@ def get_subdomains(domain):
                     time.sleep(2)
                     continue
                 else:
-                    console.print("[bold yellow]Server crt.sh down, beralih ke mode fallback...[/bold yellow]")
-                    return []
+                    console.print("[bold yellow][!] crt.sh gagal merespons. Mengaktifkan Fallback Reconnaissance via AlienVault OTX...[/bold yellow]")
+                    return alienvault_fallback(domain)
             console.print(f"[bold red][!] Gagal terhubung ke crt.sh: {e}[/bold red]")
-            return []
+            return alienvault_fallback(domain)
             
         except requests.exceptions.RequestException as e:
             if attempt < max_retries:
                 console.print(f"[bold yellow][!] Koneksi bermasalah. Mencoba ulang ({attempt}/{max_retries})...[/bold yellow]")
                 time.sleep(2)
                 continue
-            console.print("[bold yellow]Server crt.sh down, beralih ke mode fallback...[/bold yellow]")
-            return []
+            console.print("[bold yellow][!] crt.sh gagal merespons. Mengaktifkan Fallback Reconnaissance via AlienVault OTX...[/bold yellow]")
+            return alienvault_fallback(domain)
             
         except Exception as e:
             console.print(f"[bold red][!] Terjadi kesalahan saat parsing data: {e}[/bold red]")
