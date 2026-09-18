@@ -4,10 +4,22 @@ import concurrent.futures
 import re
 import json
 import time
+import random
+import urllib3
 from bs4 import BeautifulSoup
 from rich.console import Console
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 console = Console()
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+]
 
 SIGNATURES = {
     "slot": 20, 
@@ -19,17 +31,17 @@ SIGNATURES = {
     "pragmatic play": 100
 }
 
-def check_url(subdomain):
+def check_url(subdomain, proxy_url=None):
     url = f"http://{subdomain}"
-    headers_bot = {
-        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
-    }
-    headers_std = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-    }
     
+    proxies = None
+    if proxy_url:
+        proxies = {"http": proxy_url, "https": proxy_url}
+        
     try:
-        response = requests.get(url, headers=headers_bot, timeout=10)
+        selected_ua_1 = random.choice(USER_AGENTS)
+        headers_1 = {"User-Agent": selected_ua_1}
+        response = requests.get(url, headers=headers_1, proxies=proxies, timeout=10, verify=False)
         html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
         
@@ -68,7 +80,9 @@ def check_url(subdomain):
         
         if status == "terinfeksi":
             try:
-                response_std = requests.get(url, headers=headers_std, timeout=10)
+                selected_ua_2 = random.choice(USER_AGENTS)
+                headers_2 = {"User-Agent": selected_ua_2}
+                response_std = requests.get(url, headers=headers_2, proxies=proxies, timeout=10, verify=False)
                 html_std = response_std.text.lower()
                 
                 is_clean = True
@@ -184,6 +198,11 @@ def main():
         help="Target root domain untuk dipindai (contoh: target.go.id)"
     )
     parser.add_argument(
+        "-p", "--proxy", 
+        required=False, 
+        help="Rute trafik melalui proxy HTTP/HTTPS (contoh: http://127.0.0.1:8080)"
+    )
+    parser.add_argument(
         "-o", "--output", 
         required=False, 
         help="Nama file output untuk pelaporan (opsional)"
@@ -205,7 +224,7 @@ def main():
         infected_results = []
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-            future_to_url = {executor.submit(check_url, sub): sub for sub in subdomains}
+            future_to_url = {executor.submit(check_url, sub, args.proxy): sub for sub in subdomains}
             
             for future in concurrent.futures.as_completed(future_to_url):
                 result = future.result()
