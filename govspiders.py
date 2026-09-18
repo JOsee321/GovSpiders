@@ -3,6 +3,7 @@ import requests
 import concurrent.futures
 import re
 import json
+from bs4 import BeautifulSoup
 from rich.console import Console
 
 console = Console()
@@ -13,29 +14,77 @@ SIGNATURES = {
     "rtp live": 100, 
     "deposit pulsa": 100, 
     "maxwin": 100, 
-    "zeus": 20
+    "zeus": 20,
+    "pragmatic play": 100
 }
 
 def check_url(subdomain):
     url = f"http://{subdomain}"
-    headers = {
+    headers_bot = {
         "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+    }
+    headers_std = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
     }
     
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers_bot, timeout=10)
         html_content = response.text
+        soup = BeautifulSoup(html_content, 'html.parser')
         
         total_skor = 0
+        
+        target_texts = []
+        if soup.title and soup.title.string:
+            target_texts.append(soup.title.string.lower())
+            
+        meta_desc = soup.find('meta', attrs={'name': re.compile(r'^description$', re.I)})
+        if meta_desc and meta_desc.get('content'):
+            target_texts.append(meta_desc.get('content').lower())
+            
+        meta_keys = soup.find('meta', attrs={'name': re.compile(r'^keywords$', re.I)})
+        if meta_keys and meta_keys.get('content'):
+            target_texts.append(meta_keys.get('content').lower())
+            
+        if soup.body:
+            target_texts.append(soup.body.get_text(separator=' ').lower())
+            
+        combined_text = " ".join(target_texts)
+        
         for keyword, weight in SIGNATURES.items():
-            if re.search(re.escape(keyword), html_content, re.IGNORECASE):
+            if re.search(re.escape(keyword), combined_text, re.IGNORECASE):
                 total_skor += weight
                 
+        hidden_tags = soup.find_all(['iframe', 'script'])
+        for tag in hidden_tags:
+            style = tag.get('style', '').lower()
+            if 'display:none' in style or 'display: none' in style or 'visibility:hidden' in style or 'visibility: hidden' in style:
+                total_skor += 50
+                break
+                
         status = "terinfeksi" if total_skor >= 100 else "aman"
-        return {"url": subdomain, "status": status, "score": total_skor}
+        cloaking = False
+        
+        if status == "terinfeksi":
+            try:
+                response_std = requests.get(url, headers=headers_std, timeout=10)
+                html_std = response_std.text.lower()
+                
+                is_clean = True
+                for keyword in SIGNATURES.keys():
+                    if re.search(re.escape(keyword), html_std, re.IGNORECASE):
+                        is_clean = False
+                        break
+                        
+                if is_clean:
+                    cloaking = True
+            except requests.exceptions.RequestException:
+                pass
+                
+        return {"url": subdomain, "status": status, "score": total_skor, "cloaking": cloaking}
         
     except requests.exceptions.RequestException:
-        return {"url": subdomain, "status": "error", "score": 0}
+        return {"url": subdomain, "status": "error", "score": 0, "cloaking": False}
 
 def get_subdomains(domain):
     """Mengambil daftar subdomain dari crt.sh berdasarkan domain target."""
@@ -97,14 +146,17 @@ def main():
         
         infected_results = []
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
             future_to_url = {executor.submit(check_url, sub): sub for sub in subdomains}
             
             for future in concurrent.futures.as_completed(future_to_url):
                 result = future.result()
                 
                 if result["status"] == "terinfeksi":
-                    console.print(f"[bold red][TERINFEKSI] {result['url']} (Skor: {result['score']})[/bold red]")
+                    if result.get("cloaking"):
+                        console.print(f"[bold red][TERINFEKSI] [CLOAKING] {result['url']} (Skor: {result['score']})[/bold red]")
+                    else:
+                        console.print(f"[bold red][TERINFEKSI] {result['url']} (Skor: {result['score']})[/bold red]")
                     infected_results.append(result)
                 elif result["status"] == "aman":
                     console.print(f"[green][AMAN] {result['url']}[/green]")
