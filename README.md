@@ -1,53 +1,44 @@
-# 🕷️ GovSpiders
-
-**GovSpiders** adalah antarmuka baris perintah (CLI) berbasis Python yang dirancang khusus untuk memetakan, memindai, dan mendeteksi penyisipan halaman judi online (SEO poisoning/Defacement) pada infrastruktur domain institusi pemerintah (`.go.id`) dan pendidikan (`.ac.id`). Alat ini mengotomatisasi proses intelijen keamanan dengan efisien dan sangat akurat.
-
----
-
-## 🚀 Fitur Utama
-
-- **Subdomain Enumeration (crt.sh):** Secara otomatis mengumpulkan seluruh daftar subdomain yang valid dari target *root domain* menggunakan catatan sertifikat publik (SSL/TLS).
-- **Concurrent Scanning (50 Threads):** Memindai hingga 50 URL secara bersamaan tanpa pemblokiran (*non-blocking*) menggunakan `ThreadPoolExecutor` untuk performa yang sangat cepat.
-- **Regex Weighted Scoring Engine:** Sistem deteksi cerdas yang menggunakan `BeautifulSoup4` untuk menganalisis elemen DOM penting (`<title>`, `<meta>`, `<body>`) dan menilai berdasarkan ambang batas skor (threshold) guna meminimalisasi *false positive*. Dilengkapi juga deteksi *hidden injection* (injeksi `<iframe>` atau `<script>` tersembunyi).
-- **Double-agent Cloaking Detection:** Strategi pengiriman *dual HTTP Request*! GovSpiders mampu mendeteksi teknik *cloaking* (manipulasi hasil perayapan Google) dengan memalsukan *headers* sebagai Googlebot, lalu otomatis memverifikasi ulang dengan *User-Agent* standar jika terindikasi terinfeksi.
-- **Auto-Reporting (TXT & JSON):** Hasil pencarian otomatis dieskpor dalam format laporan teks dan format JSON yang komprehensif untuk rekam jejak forensik.
+<p align="center">
+<img src="logo.png" alt="GovSpiders Logo" width="200">
+</p>
+<h1 align="center">GovSpiders</h1>
+<p align="center">CLI tool untuk mendeteksi sisipan judol (SEO Poisoning) pada domain pemerintah dan kampus.</p>
 
 ---
 
-## ⚙️ Prasyarat & Instalasi
+## Fitur Utama
 
-Pastikan Anda telah menginstal **Python 3.9+** di sistem Anda.
+- **Subdomain Enumeration (crt.sh):** Secara otomatis mengumpulkan seluruh daftar subdomain target melalui rekaman sertifikat publik.
+- **Concurrent Scanning (50 Threads):** Pemindaian berjalan paralel secara asinkron menggunakan 50 thread sekaligus, sehingga proses sangat cepat.
+- **Regex Weighted Scoring Engine:** Mendeteksi elemen khusus di dalam DOM seperti title, meta tags, dan body. Kata kunci diberi bobot skor. Jika total skor melampaui batas ambang, URL ditandai terinfeksi.
+- **Double-agent Cloaking Detection:** Mencegah trik cloaking yang sering dipakai peretas untuk mengelabui mesin pencari. Skrip ini akan menyamar sebagai Googlebot pada request pertama, lalu memverifikasi ulang dengan user-agent browser biasa jika ditemukan kecurigaan.
+
+## Cara Instalasi
+
+Pastikan Python versi terbaru (minimal versi 3.9) sudah terpasang.
 
 1. Clone repositori ini:
    ```bash
-   git clone https://github.com/username/GovSpiders.git
+   git clone https://github.com/JOsee321/GovSpiders.git
    cd GovSpiders
    ```
-   *(Catatan: Sesuaikan URL repository jika Anda memindahkannya ke git remote Anda).*
 
-2. Instalasi semua pustaka dependensi yang dibutuhkan:
+2. Instal dependensi:
    ```bash
    pip install -r requirements.txt
    ```
 
----
+## Cara Penggunaan
 
-## 🛠️ Cara Penggunaan
+Gunakan argumen `-d` untuk domain dan `-o` untuk nama file output laporannya.
 
-Cukup jalankan *script* dengan *flag* domain `-d`. Anda juga bisa menentukan nama kustom untuk file pelaporan menggunakan `-o`.
-
-Contoh menjalankan pemindaian:
+Contoh command CLI:
 ```bash
 python govspiders.py -d banjarbarukota.go.id -o hasil_audit.txt
 ```
 
-**Penjelasan Argumen:**
-* `-d` atau `--domain` *(Wajib)*: Masukkan nama *root domain* target.
-* `-o` atau `--output` *(Opsional)*: Menentukan nama file keluaran khusus (Laporan `TXT` dan log forensik `JSON`). Jika diabaikan, ia akan menyimpannya menggunakan nama bawaan `govspiders_report.txt`.
+Skrip akan langsung bekerja mencari semua subdomain yang berasosiasi, lalu memindainya satu per satu secara paralel. Laporan output akan tersedia di file teks dan sebuah file JSON berisi detail lengkap skor dan hasil deteksi cloaking.
 
----
+## Disclaimer
 
-## ⚠️ Disclaimer
-
-**PERINGATAN HUKUM DAN ETIKA:** 
-Alat **GovSpiders** ini dibuat murni dengan niat baik (*good faith*) dan ditujukan HANYA untuk tujuan audit keamanan proaktif, *compliance* internal, dan mitigasi insiden oleh Tim Insiden Respons Siber (CSIRT/CERT). Alat ini DILARANG KERAS digunakan untuk tindakan peretasan ofensif, memindai infrastruktur tanpa otorisasi tertulis, atau disalahgunakan dalam kegiatan siber ilegal lainnya. Pengembang tidak bertanggung jawab atas segala kerugian maupun konsekuensi hukum yang ditimbulkan dari penyalahgunaan alat ini.
+Tool ini dirancang murni untuk tujuan audit keamanan dan kepatuhan internal. Gunakan hanya pada aset yang Anda kelola sendiri, atau yang sudah diizinkan (misal oleh CSIRT/institusi terkait). Segala bentuk penyalahgunaan adalah tanggung jawab pengguna sepenuhnya.

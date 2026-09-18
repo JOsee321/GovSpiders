@@ -1,0 +1,14 @@
+# Python Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Lingkungan Virtual
+venv/
+env/
+.venv/
+
+# File hasil pemindaian dan perancangan
+PRD.md
+*.txt
+*.json
