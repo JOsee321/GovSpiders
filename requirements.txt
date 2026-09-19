@@ -1,3 +1,6 @@
 requests
-rich
 beautifulsoup4
+rich
+streamlit
+pandas
+plotly
