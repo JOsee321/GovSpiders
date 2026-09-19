@@ -132,7 +132,7 @@ def main():
     df_status = df_status[df_status["Jumlah"] > 0]
     
     fig = px.pie(df_status, values="Jumlah", names="Status", title="Distribusi Status Pemindaian", hole=0.4)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     
     st.markdown("---")
     
@@ -140,7 +140,7 @@ def main():
     st.markdown("Tabel berikut menampilkan domain target yang rentan beserta tautan afiliator yang berhasil diekstrak.")
     
     df_syndicates = extract_syndicate_dataframe(data)
-    st.dataframe(df_syndicates, use_container_width=True)
+    st.dataframe(df_syndicates, width="stretch")
 
 if __name__ == "__main__":
     main()

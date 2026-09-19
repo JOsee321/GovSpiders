@@ -41,6 +41,16 @@ python govspiders.py -d target-instansi.go.id -o audit_results.txt --proxy http:
 
 The script will immediately find all associated subdomains, crawl them using BeautifulSoup to find all internal sub-directory links up to the specified depth, and scan all gathered URLs one by one in parallel. The tool automatically generates two types of output: a human-readable `.txt` file and a pipeline-ready `.json` file for integration into external tools like Nuclei or Burp Suite.
 
+## Threat Intelligence Dashboard
+
+GovSpiders includes a web-based GUI dashboard built with Streamlit to visualize the `.json` output from your scans. The dashboard displays key metrics, an interactive ratio chart, and a relational table of extracted syndicate footprints.
+
+To run the dashboard:
+```bash
+streamlit run dashboard.py
+```
+*Note: If you run this on a remote server, you may want to pass `--server.headless true` or simply answer the email prompt if it's your first time running Streamlit.*
+
 ## Customization
 
 You can easily customize the detection keywords and their corresponding scoring weights by editing the `rules.json` file. This allows you to add or modify online gambling keywords without needing to touch the Python source code. Additionally, you can add new syndicate footprints (like specific TLDs or URL paths) to the `syndicate_footprints` array so the engine detects them as malicious outbound links. If the file is deleted or missing, GovSpiders will automatically generate a new one with the default signature database.
