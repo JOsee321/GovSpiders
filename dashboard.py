@@ -69,20 +69,20 @@ def extract_syndicate_dataframe(data):
             
             if not links:
                 rows.append({
-                    "Domain Target": domain,
-                    "Skor Ancaman": score,
-                    "Tautan Afiliator (Sindikat)": "-"
+                    "Target Domain": domain,
+                    "Threat Score": score,
+                    "Affiliate Link (Syndicate)": "-"
                 })
             else:
                 for link in links:
                     rows.append({
-                        "Domain Target": domain,
-                        "Skor Ancaman": score,
-                        "Tautan Afiliator (Sindikat)": link
+                        "Target Domain": domain,
+                        "Threat Score": score,
+                        "Affiliate Link (Syndicate)": link
                     })
                     
     if not rows:
-        return pd.DataFrame(columns=["Domain Target", "Skor Ancaman", "Tautan Afiliator (Sindikat)"])
+        return pd.DataFrame(columns=["Target Domain", "Threat Score", "Affiliate Link (Syndicate)"])
         
     return pd.DataFrame(rows)
 
@@ -93,16 +93,16 @@ def main():
     st.set_page_config(page_title="GovSpiders Threat Intelligence", layout="wide")
     
     st.title("GovSpiders Threat Intelligence Dashboard")
-    st.markdown("Visualisasi data hasil pemindaian keamanan (SEO Poisoning).")
+    st.markdown("Security scan data visualization (SEO Poisoning).")
     
     with st.sidebar:
-        st.header("Konfigurasi Data")
-        uploaded_file = st.file_uploader("Unggah File JSON (hasil.json)", type=["json"])
+        st.header("Data Configuration")
+        uploaded_file = st.file_uploader("Upload JSON File (hasil.json)", type=["json"])
         
     data = load_data(uploaded_file)
     
     if not data:
-        st.info("Silakan unggah file JSON hasil pemindaian di menu samping untuk melihat visualisasi data.")
+        st.info("Please upload the scan results JSON file in the sidebar to view data visualization.")
         return
         
     total_scanned, total_vulnerable, total_syndicate_links = calculate_metrics(data)
@@ -111,15 +111,15 @@ def main():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric(label="Total Target Dipindai", value=total_scanned)
+        st.metric(label="Total Scanned Targets", value=total_scanned)
     with col2:
-        st.metric(label="Total Domain Rentan", value=total_vulnerable)
+        st.metric(label="Total Vulnerable Domains", value=total_vulnerable)
     with col3:
-        st.metric(label="Total Jejak Sindikat", value=total_syndicate_links)
+        st.metric(label="Total Syndicate Footprints", value=total_syndicate_links)
         
     st.markdown("---")
     
-    st.subheader("Rasio Status Target")
+    st.subheader("Target Status Ratio")
     status_counts = {"Vulnerable": 0, "Safe": 0, "Error": 0}
     for item in data:
         status = item.get("status", "Unknown")
@@ -128,16 +128,16 @@ def main():
         else:
             status_counts[status] = 1
             
-    df_status = pd.DataFrame(list(status_counts.items()), columns=["Status", "Jumlah"])
-    df_status = df_status[df_status["Jumlah"] > 0]
+    df_status = pd.DataFrame(list(status_counts.items()), columns=["Status", "Count"])
+    df_status = df_status[df_status["Count"] > 0]
     
-    fig = px.pie(df_status, values="Jumlah", names="Status", title="Distribusi Status Pemindaian", hole=0.4)
+    fig = px.pie(df_status, values="Count", names="Status", title="Scan Status Distribution", hole=0.4)
     st.plotly_chart(fig, width="stretch")
     
     st.markdown("---")
     
     st.subheader("Syndicate Relational Table")
-    st.markdown("Tabel berikut menampilkan domain target yang rentan beserta tautan afiliator yang berhasil diekstrak.")
+    st.markdown("The following table displays vulnerable target domains and successfully extracted affiliate links.")
     
     df_syndicates = extract_syndicate_dataframe(data)
     st.dataframe(df_syndicates, width="stretch")

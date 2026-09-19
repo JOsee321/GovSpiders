@@ -238,7 +238,7 @@ def alienvault_fallback(domain):
                     
         return list(subdomains)
     except Exception as e:
-        console.print(f"[bold red][!] Semua metode enumerasi telah gagal. AlienVault error: {e}[/bold red]")
+        console.print(f"[bold red][!] All enumeration methods failed. AlienVault error: {e}[/bold red]")
         return []
 
 def get_subdomains(domain):
@@ -271,25 +271,25 @@ def get_subdomains(domain):
         except requests.exceptions.HTTPError as e:
             if response.status_code in [500, 502, 503, 504]:
                 if attempt < max_retries:
-                    console.print(f"[bold yellow][!] crt.sh error {response.status_code}. Mencoba ulang ({attempt}/{max_retries})...[/bold yellow]")
+                    console.print(f"[bold yellow][!] crt.sh error {response.status_code}. Retrying ({attempt}/{max_retries})...[/bold yellow]")
                     time.sleep(2)
                     continue
                 else:
-                    console.print("[bold yellow][!] crt.sh gagal merespons. Mengaktifkan Fallback Reconnaissance via AlienVault OTX...[/bold yellow]")
+                    console.print("[bold yellow][!] crt.sh unresponsive. Activating Fallback Reconnaissance via AlienVault OTX...[/bold yellow]")
                     return alienvault_fallback(domain)
-            console.print(f"[bold red][!] Gagal terhubung ke crt.sh: {e}[/bold red]")
+            console.print(f"[bold red][!] Failed to connect to crt.sh: {e}[/bold red]")
             return alienvault_fallback(domain)
             
         except requests.exceptions.RequestException as e:
             if attempt < max_retries:
-                console.print(f"[bold yellow][!] Koneksi bermasalah. Mencoba ulang ({attempt}/{max_retries})...[/bold yellow]")
+                console.print(f"[bold yellow][!] Connection issue. Retrying ({attempt}/{max_retries})...[/bold yellow]")
                 time.sleep(2)
                 continue
-            console.print("[bold yellow][!] crt.sh gagal merespons. Mengaktifkan Fallback Reconnaissance via AlienVault OTX...[/bold yellow]")
+            console.print("[bold yellow][!] crt.sh unresponsive. Activating Fallback Reconnaissance via AlienVault OTX...[/bold yellow]")
             return alienvault_fallback(domain)
             
         except Exception as e:
-            console.print(f"[bold red][!] Terjadi kesalahan saat parsing data: {e}[/bold red]")
+            console.print(f"[bold red][!] Error occurred during data parsing: {e}[/bold red]")
             return []
             
     return []
@@ -298,28 +298,28 @@ def main():
     print_banner()
     
     parser = argparse.ArgumentParser(
-        description="GovSpiders - Pemindai SEO poisoning/Defacement pada infrastruktur domain pemerintah dan pendidikan."
+        description="GovSpiders - SEO poisoning/Defacement scanner for government and educational domain infrastructure."
     )
     parser.add_argument(
         "-d", "--domain", 
         required=True, 
-        help="Target root domain untuk dipindai (contoh: target.go.id)"
+        help="Target root domain to scan (e.g., target.go.id)"
     )
     parser.add_argument(
         "-p", "--proxy", 
         required=False, 
-        help="Rute trafik melalui proxy HTTP/HTTPS (contoh: http://127.0.0.1:8080)"
+        help="Route traffic through HTTP/HTTPS proxy (e.g., http://127.0.0.1:8080)"
     )
     parser.add_argument(
         "--depth", 
         type=int,
         default=2,
-        help="Kedalaman maksimal crawling (default: 2)"
+        help="Maximum crawling depth (default: 2)"
     )
     parser.add_argument(
         "-o", "--output", 
         required=False, 
-        help="Nama file output untuk pelaporan (opsional)"
+        help="Output filename for reporting (optional)"
     )
 
     args = parser.parse_args()
@@ -327,23 +327,23 @@ def main():
     rules_data = load_rules()
 
     # Display initialization message using rich
-    console.print(f"[bold cyan][*] Inisialisasi GovSpiders... Memulai pemindaian untuk target: {args.domain}[/bold cyan]")
+    console.print(f"[bold cyan][*] Initializing GovSpiders... Starting scan for target: {args.domain}[/bold cyan]")
 
-    with console.status("[bold yellow]Mencari subdomain di crt.sh...[/bold yellow]"):
+    with console.status("[bold yellow]Searching for subdomains via crt.sh...[/bold yellow]"):
         subdomains = get_subdomains(args.domain)
         
     if subdomains:
-        console.print(f"[bold green][*] Berhasil menemukan {len(subdomains)} subdomain unik.[/bold green]")
+        console.print(f"[bold green][*] Successfully found {len(subdomains)} unique subdomains.[/bold green]")
         
         all_urls_to_scan = set()
-        with console.status(f"[bold yellow]Melakukan deep crawling (depth: {args.depth}) pada subdomain...[/bold yellow]"):
+        with console.status(f"[bold yellow]Performing deep crawling (depth: {args.depth}) on subdomains...[/bold yellow]"):
             with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
                 future_to_crawl = {executor.submit(crawl_urls, f"http://{sub}", args.depth, args.proxy): sub for sub in subdomains}
                 
                 for future in concurrent.futures.as_completed(future_to_crawl):
                     all_urls_to_scan.update(future.result())
                     
-        console.print(f"[bold cyan][*] Memulai pemindaian multithreading pada {len(all_urls_to_scan)} URL...[/bold cyan]")
+        console.print(f"[bold cyan][*] Starting multithreaded scanning on {len(all_urls_to_scan)} URLs...[/bold cyan]")
         
         infected_results = []
         json_results = []
@@ -354,7 +354,7 @@ def main():
             for future in concurrent.futures.as_completed(future_to_url):
                 result = future.result()
                 
-                status_mapped = "Vulnerable" if result["status"] == "terinfeksi" else "Safe" if result["status"] == "aman" else "Error"
+                status_mapped = "Vulnerable" if result["status"] == "terinfeksi" else "Safe" if result["status"] == "aman" else "Timeout/Error"
                 json_results.append({
                     "url": result["url"],
                     "score": result["score"],
@@ -366,19 +366,19 @@ def main():
                 
                 if result["status"] == "terinfeksi":
                     if result.get("cloaking"):
-                        console.print(f"[bold red][TERINFEKSI] [CLOAKING] {result['url']} (Skor: {result['score']})[/bold red]")
+                        console.print(f"[bold red][VULNERABLE] [CLOAKING] {result['url']} (Score: {result['score']})[/bold red]")
                     else:
-                        console.print(f"[bold red][TERINFEKSI] {result['url']} (Skor: {result['score']})[/bold red]")
+                        console.print(f"[bold red][VULNERABLE] {result['url']} (Score: {result['score']})[/bold red]")
                     
                     syndicates = result.get("syndicate_links", [])
                     if syndicates:
-                        console.print(f"[bold yellow][!] Jejak Sindikat Ditemukan: {len(syndicates)} link terdeteksi.[/bold yellow]")
+                        console.print(f"[bold yellow][!] Syndicate Footprints Detected: {len(syndicates)} link(s) detected.[/bold yellow]")
                         
                     infected_results.append(result)
                 elif result["status"] == "aman":
-                    console.print(f"[green][AMAN] {result['url']}[/green]")
+                    console.print(f"[green][SAFE] {result['url']}[/green]")
                 elif result["status"] == "error":
-                    console.print(f"[yellow][ERROR] {result['url']}[/yellow]")
+                    console.print(f"[yellow][TIMEOUT/ERROR] {result['url']}[/yellow]")
                     
         # Export process
         if args.output:
@@ -399,10 +399,10 @@ def main():
         with open(json_filename, "w") as f_json:
             json.dump(json_results, f_json, indent=4)
             
-        console.print(f"\n[bold cyan][*] Pemindaian selesai! Laporan TXT disimpan di {txt_filename} dan log forensik di {json_filename}[/bold cyan]")
+        console.print(f"\n[bold cyan][*] Scan complete! TXT report saved to {txt_filename} and forensic log to {json_filename}[/bold cyan]")
         
     else:
-        console.print("[bold red][!] Tidak ada subdomain yang ditemukan atau terjadi kesalahan.[/bold red]")
+        console.print("[bold red][!] No subdomains found or an error occurred.[/bold red]")
 
 if __name__ == "__main__":
     main()
