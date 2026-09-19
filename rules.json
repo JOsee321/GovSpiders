@@ -1,7 +1,26 @@
 {
   "threshold": 100,
   "signatures": {
-    "100": ["rtp live", "maxwin", "pragmatic play", "slot gacor", "judi online"],
-    "20": ["slot", "zeus", "toto", "togel", "deposit"]
-  }
+    "100": [
+      "rtp live", "maxwin", "pragmatic play", "slot gacor", "judi online", 
+      "situs toto", "bandar togel", "pg soft", "mahjong ways", "gates of olympus",
+      "slot deposit dana", "pola slot", "situs judi terpercaya", "agen taruhan",
+      "slot88", "sbobet", "judi bola", "togel macau", "toto wuhan", "situs gampang menang"
+    ],
+    "50": [
+      "bonus new member", "deposit pulsa tanpa potongan", "anti rungkad", 
+      "bocoran rtp", "wd kilat", "minimal deposit", "link alternatif", 
+      "daftar akun pro", "server thailand", "server kamboja", "pasti jp"
+    ],
+    "20": [
+      "slot", "zeus", "toto", "togel", "deposit", "bet", "gacor", 
+      "scatter", "jackpot", "taruhan", "casino", "poker", "roulette"
+    ]
+  },
+  "syndicate_footprints": [
+    "wa.me/", "api.whatsapp.com/", "t.me/", "t.link/", "linktr.ee/", "heylink.me/", 
+    "s.id/", "bit.ly/", "cutt.ly/", "tinyurl.com/",
+    ".vip", ".top", ".cc", ".icu", ".xyz", ".win", ".club", ".click", ".pro",
+    "rtp", "bet", "gacor", "slot", "toto", "judi", "togel"
+  ]
 }
