@@ -21,7 +21,10 @@ def load_rules():
         "signatures": {
             "100": ["rtp live", "maxwin", "pragmatic play", "slot gacor", "judi online"],
             "20": ["slot", "zeus", "toto", "togel", "deposit"]
-        }
+        },
+        "syndicate_footprints": [
+            "wa.me/", "t.me/", ".vip", ".top", ".cc", "rtp", "bet", "gacor", "slot"
+        ]
     }
     if not os.path.exists("rules.json"):
         try:
@@ -83,6 +86,29 @@ def crawl_urls(base_url, max_depth, proxy_url=None):
             
     return internal_urls
 
+def extract_syndicates(base_url, soup_obj, rules_dict):
+    syndicate_links = set()
+    base_domain = urlparse(base_url).netloc
+    footprints = rules_dict.get("syndicate_footprints", [])
+    
+    if not footprints:
+        return []
+        
+    for a_tag in soup_obj.find_all('a', href=True):
+        href = a_tag['href']
+        parsed_url = urlparse(href)
+        
+        if not parsed_url.netloc or parsed_url.netloc == base_domain:
+            continue
+            
+        href_lower = href.lower()
+        for fp in footprints:
+            if fp.lower() in href_lower:
+                syndicate_links.add(href)
+                break
+                
+    return list(syndicate_links)
+
 def check_url(url, rules_data, proxy_url=None):
     if not url.startswith("http"):
         url = f"http://{url}"
@@ -138,8 +164,10 @@ def check_url(url, rules_data, proxy_url=None):
         threshold = rules_data.get("threshold", 100)
         status = "terinfeksi" if total_skor >= threshold else "aman"
         cloaking = False
+        syndicate_links = []
         
         if status == "terinfeksi":
+            syndicate_links = extract_syndicates(url, soup, rules_data)
             try:
                 selected_ua_2 = random.choice(USER_AGENTS)
                 headers_2 = {"User-Agent": selected_ua_2}
@@ -160,10 +188,10 @@ def check_url(url, rules_data, proxy_url=None):
             except requests.exceptions.RequestException:
                 pass
                 
-        return {"url": url, "status": status, "score": total_skor, "cloaking": cloaking, "title": title_text}
+        return {"url": url, "status": status, "score": total_skor, "cloaking": cloaking, "title": title_text, "syndicate_links": syndicate_links}
         
     except requests.exceptions.RequestException:
-        return {"url": url, "status": "error", "score": 0, "cloaking": False, "title": ""}
+        return {"url": url, "status": "error", "score": 0, "cloaking": False, "title": "", "syndicate_links": []}
 
 def print_banner():
     banner = r"""
@@ -316,7 +344,8 @@ def main():
                     "score": result["score"],
                     "status": status_mapped,
                     "cloaking_detected": result["cloaking"],
-                    "title": result.get("title", "")
+                    "title": result.get("title", ""),
+                    "syndicate_links": result.get("syndicate_links", [])
                 })
                 
                 if result["status"] == "terinfeksi":
@@ -324,6 +353,11 @@ def main():
                         console.print(f"[bold red][TERINFEKSI] [CLOAKING] {result['url']} (Skor: {result['score']})[/bold red]")
                     else:
                         console.print(f"[bold red][TERINFEKSI] {result['url']} (Skor: {result['score']})[/bold red]")
+                    
+                    syndicates = result.get("syndicate_links", [])
+                    if syndicates:
+                        console.print(f"[bold yellow][!] Jejak Sindikat Ditemukan: {len(syndicates)} link terdeteksi.[/bold yellow]")
+                        
                     infected_results.append(result)
                 elif result["status"] == "aman":
                     console.print(f"[green][AMAN] {result['url']}[/green]")
