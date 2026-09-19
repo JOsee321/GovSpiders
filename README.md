@@ -40,6 +40,10 @@ python govspiders.py -d target-instansi.go.id -o audit_results.txt --proxy http:
 
 The script will immediately find all associated subdomains, crawl them using BeautifulSoup to find all internal sub-directory links up to the specified depth, and scan all gathered URLs one by one in parallel. The tool automatically generates two types of output: a human-readable `.txt` file and a pipeline-ready `.json` file for integration into external tools like Nuclei or Burp Suite.
 
+## Customization
+
+You can easily customize the detection keywords and their corresponding scoring weights by editing the `rules.json` file. This allows you to add or modify online gambling keywords without needing to touch the Python source code. If the file is deleted or missing, GovSpiders will automatically generate a new one with the default signature database.
+
 ## Disclaimer
 
 This tool is designed purely for internal security audits and compliance purposes. Only use it on assets you manage yourself or have explicit authorization to test (e.g., by CSIRT or related institutions). Any form of misuse is solely the responsibility of the user.

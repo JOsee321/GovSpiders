@@ -6,6 +6,7 @@ import json
 import time
 import random
 import urllib3
+import os
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from rich.console import Console
@@ -13,6 +14,28 @@ from rich.console import Console
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 console = Console()
+
+def load_rules():
+    default_rules = {
+        "threshold": 100,
+        "signatures": {
+            "100": ["rtp live", "maxwin", "pragmatic play", "slot gacor", "judi online"],
+            "20": ["slot", "zeus", "toto", "togel", "deposit"]
+        }
+    }
+    if not os.path.exists("rules.json"):
+        try:
+            with open("rules.json", "w") as f:
+                json.dump(default_rules, f, indent=4)
+        except Exception as e:
+            console.print(f"[bold red][!] Gagal membuat file rules.json default: {e}[/bold red]")
+            
+    try:
+        with open("rules.json", "r") as f:
+            return json.load(f)
+    except Exception as e:
+        console.print(f"[bold red][!] Gagal membaca rules.json, menggunakan rules default. Error: {e}[/bold red]")
+        return default_rules
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
@@ -22,15 +45,6 @@ USER_AGENTS = [
     "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 ]
 
-SIGNATURES = {
-    "slot": 20, 
-    "gacor": 50, 
-    "rtp live": 100, 
-    "deposit pulsa": 100, 
-    "maxwin": 100, 
-    "zeus": 20,
-    "pragmatic play": 100
-}
 
 def crawl_urls(base_url, max_depth, proxy_url=None):
     visited_urls = set()
@@ -69,7 +83,7 @@ def crawl_urls(base_url, max_depth, proxy_url=None):
             
     return internal_urls
 
-def check_url(url, proxy_url=None):
+def check_url(url, rules_data, proxy_url=None):
     if not url.startswith("http"):
         url = f"http://{url}"
     
@@ -105,10 +119,15 @@ def check_url(url, proxy_url=None):
             
         combined_text = " ".join(target_texts)
         
-        for keyword, weight in SIGNATURES.items():
-            if re.search(re.escape(keyword), combined_text, re.IGNORECASE):
-                total_skor += weight
-                
+        for weight_str, keywords in rules_data.get("signatures", {}).items():
+            try:
+                weight = int(weight_str)
+            except ValueError:
+                continue
+            for keyword in keywords:
+                if re.search(re.escape(keyword), combined_text, re.IGNORECASE):
+                    total_skor += weight
+                    
         hidden_tags = soup.find_all(['iframe', 'script'])
         for tag in hidden_tags:
             style = tag.get('style', '').lower()
@@ -116,7 +135,8 @@ def check_url(url, proxy_url=None):
                 total_skor += 50
                 break
                 
-        status = "terinfeksi" if total_skor >= 100 else "aman"
+        threshold = rules_data.get("threshold", 100)
+        status = "terinfeksi" if total_skor >= threshold else "aman"
         cloaking = False
         
         if status == "terinfeksi":
@@ -127,9 +147,12 @@ def check_url(url, proxy_url=None):
                 html_std = response_std.text.lower()
                 
                 is_clean = True
-                for keyword in SIGNATURES.keys():
-                    if re.search(re.escape(keyword), html_std, re.IGNORECASE):
-                        is_clean = False
+                for weight_str, keywords in rules_data.get("signatures", {}).items():
+                    for keyword in keywords:
+                        if re.search(re.escape(keyword), html_std, re.IGNORECASE):
+                            is_clean = False
+                            break
+                    if not is_clean:
                         break
                         
                 if is_clean:
@@ -256,6 +279,8 @@ def main():
     )
 
     args = parser.parse_args()
+    
+    rules_data = load_rules()
 
     # Display initialization message using rich
     console.print(f"[bold cyan][*] Inisialisasi GovSpiders... Memulai pemindaian untuk target: {args.domain}[/bold cyan]")
@@ -280,7 +305,7 @@ def main():
         json_results = []
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-            future_to_url = {executor.submit(check_url, url, args.proxy): url for url in all_urls_to_scan}
+            future_to_url = {executor.submit(check_url, url, rules_data, args.proxy): url for url in all_urls_to_scan}
             
             for future in concurrent.futures.as_completed(future_to_url):
                 result = future.result()
