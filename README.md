@@ -12,6 +12,7 @@
 - **Subdomain Enumeration (crt.sh):** Automatically gathers a complete list of target subdomains via public certificate records.
 - **Concurrent Scanning (50 Threads):** Scans run in parallel asynchronously using 50 threads at once, ensuring very fast processing.
 - **Regex Weighted Scoring Engine:** Detects specific elements within the DOM such as title, meta tags, and body. Keywords are assigned weighted scores. If the total score exceeds the threshold, the URL is marked as infected.
+- **Heuristic OSINT / Syndicate Mapping:** Automatically extracts affiliate communication links (such as WhatsApp, Telegram, or gambling domains) from infected pages to map syndicate networks.
 - **Double-agent Cloaking Detection:** Prevents cloaking tricks often used by attackers to deceive search engines. The script poses as Googlebot on the first request, then re-verifies using a standard browser user-agent if suspicion arises.
 
 ## Installation
@@ -42,7 +43,23 @@ The script will immediately find all associated subdomains, crawl them using Bea
 
 ## Customization
 
-You can easily customize the detection keywords and their corresponding scoring weights by editing the `rules.json` file. This allows you to add or modify online gambling keywords without needing to touch the Python source code. If the file is deleted or missing, GovSpiders will automatically generate a new one with the default signature database.
+You can easily customize the detection keywords and their corresponding scoring weights by editing the `rules.json` file. This allows you to add or modify online gambling keywords without needing to touch the Python source code. Additionally, you can add new syndicate footprints (like specific TLDs or URL paths) to the `syndicate_footprints` array so the engine detects them as malicious outbound links. If the file is deleted or missing, GovSpiders will automatically generate a new one with the default signature database.
+
+Example JSON output:
+```json
+[
+  {
+    "url": "http://dinas.target-instansi.go.id/path",
+    "score": 140,
+    "status": "Vulnerable",
+    "cloaking_detected": true,
+    "title": "Situs Gacor",
+    "syndicate_links": [
+      "https://wa.me/6281234567890"
+    ]
+  }
+]
+```
 
 ## Disclaimer
 
